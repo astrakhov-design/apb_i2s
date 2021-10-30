@@ -1,6 +1,10 @@
 //APB_I2S HEAD MODULE
 //author: astrakhov, JSC MERI
 //date: 25.10.2021
+`define FIFO_DEPTH  2
+
+`include "register_map.sv"
+
 
 module apb_i2s(
   input logic i_clk,
@@ -64,8 +68,6 @@ assign apb_slave.pready  =  1'b1;
   always_ff @ (posedge i_clk, negedge i_rst_n) begin
     if(~i_rst_n) begin
       CR  <=  'h0;
-      TXR <=  'h0;
-      TXL <=  'h0;
     end
     else begin
       if (wr) begin
@@ -73,15 +75,72 @@ assign apb_slave.pready  =  1'b1;
           CR_ADDR:  begin
                       CR  <=  wdata[0];
                     end
-          TXL_ADDR: begin
-                      TXL <=  wdata;
-                    end
-          TXR_ADDR: begin
-                      TXR <=  wdata;
-                    end
         endcase
       end
     end
   end
 
+/* TXL pseudo register logic */
+  logic txl_write;
+  assign txl_write = (addr == TXL_ADDR) && wr;
+
+  logic [31:0] txl_bus;
+  assign txl_bus = txl_write ? wdata : 'h0;
+
+/* TXR pseudo register logic */
+  logic txr_write;
+  assign txr_write = (addr == TXR_ADDR) && wr;
+
+  logic [31:0]  txr_bus;
+  assign txr_bus = txr_write ? wdata : 'h0;
+
+  logic         buffer_read;
+  logic [31:0]  txl_out;
+  logic [31:0]  txr_out;
+
 /*Module interconnection */
+
+/* FIFO buffer for Left Channel */
+fifo_buffer #(
+  .B(32),
+  .W(FIFO_DEPTH)
+) fifo_txl(
+  .clk(i_clk),
+  .rst(i_rst_n),
+  .rd(buffer_read),
+  .wr(txl_write),
+  .w_data(txl_bus),
+  .empty(SR.fifol_empty),
+  .full(SR.fifol_full),
+  .r_data(txl_out)
+);
+
+/* FIFO buffer for Right Channel */
+fifo_buffer #(
+  .B(32),
+  .W(FIFO_DEPTH),
+) fifo_txr(
+  .clk(i_clk),
+  .rst(i_rst_n),
+  .rd(buffer_read),
+  .wr(txr_write),
+  .w_data(txr_bus),
+  .empty(SR.fifor_emprty),
+  .full(SR.fifor_full),
+  .r_data(txr_out)
+);
+
+/* i2s master module */
+i2s_master i2s_tx(
+  .clk(clk),
+  .nrst(nrst),
+  .enable(CR.I2S_ENABLE),
+  .data_left(txl_out),
+  .data_right(txr_out),
+  .data_rqst(buffer_read),
+  .tclk(i2s_master.TCLK),
+  .ws(i2s_master.WS),
+  .td(i2s_master.TD)
+);
+
+endmodule
