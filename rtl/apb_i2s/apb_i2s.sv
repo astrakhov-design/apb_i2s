@@ -4,6 +4,8 @@
 `define FIFO_DEPTH  2
 
 `include "register_map.sv"
+`include "i2s_tx.sv"
+`include "fifo_buffer.sv"
 
 
 module apb_i2s(
@@ -103,7 +105,7 @@ assign apb_slave.pready  =  1'b1;
 /* FIFO buffer for Left Channel */
 fifo_buffer #(
   .B(32),
-  .W(FIFO_DEPTH)
+  .W(`FIFO_DEPTH)
 ) fifo_txl(
   .clk(i_clk),
   .rst(i_rst_n),
@@ -118,7 +120,7 @@ fifo_buffer #(
 /* FIFO buffer for Right Channel */
 fifo_buffer #(
   .B(32),
-  .W(FIFO_DEPTH),
+  .W(`FIFO_DEPTH)
 ) fifo_txr(
   .clk(i_clk),
   .rst(i_rst_n),

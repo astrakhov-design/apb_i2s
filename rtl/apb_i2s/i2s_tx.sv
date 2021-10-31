@@ -17,7 +17,7 @@ module i2s_master(
 );
 
 //simple prescaler to 4
-logic [2:0] tclk_reg;
+logic [2:0] tclk_counter;
 logic       tclk_prefall;
 
 always_ff @ (posedge clk, negedge nrst)
@@ -49,6 +49,7 @@ always_ff @ (posedge clk, negedge nrst) begin
           shift_reg <= shift_reg << 1;
       end
     end
+  end
   end
 
 always_ff @ (posedge clk, negedge nrst) begin

@@ -3,6 +3,10 @@
 //date: 28.10.2021
 `timescale 1ns / 1ns
 
+`include "apb_interface.sv"
+`include "i2s_interface.sv"
+
+
 module tb;
   logic clk   = 1;
   logic nrst  = 1;
@@ -16,17 +20,18 @@ module tb;
     nrst  <= 1;
   end
 
-  APB_BUS.Master      apb_master;
-  i2s_interface.Slave i2s_slave;
+//  APB_BUS.Master      apb_master;
+//  i2s_interface.Slave i2s_slave;
 
 /* interconnection */
 apb_i2s DUT(
   .i_clk(clk),
   .i_rst_n(nrst),
-
-  APB_BUS       apb_master,
-  i2s_interface i2s_slave
+  .apb_slave(APB_BUS.Master),
+  .i2s_master(i2s_interface.Slave)
 );
+
+/*
 
 task apb_send(
   input bit [31:0]  address,
@@ -34,3 +39,7 @@ task apb_send(
 );
 
 endtask
+
+*/
+
+endmodule

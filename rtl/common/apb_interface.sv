@@ -6,13 +6,13 @@ interface APB_BUS #(
   parameter int unsigned  APB_DATA_WIDTH  = 32
 );
 
-logic [`APB_ADDR_WIDTH:0]   paddr;
+logic [APB_ADDR_WIDTH:0]   paddr;
 logic                       psel;
 logic                       pwrite;
-logic [`APB_DATA_WIDTH:0]   pwdata;
+logic [APB_DATA_WIDTH:0]   pwdata;
 logic                       penable;
 logic                       pready;
-logic  [`APB_DATA_WIDTH:0]  prdata;
+logic  [APB_DATA_WIDTH:0]  prdata;
 logic                       pslverr;
 
 modport Master(

@@ -18,14 +18,20 @@ endif
 
 #no_uvm startup
 all:
-	@irun -sv -64 -v93 -sem2009 -smartorder -timescale 1ns/1ps +tue \
+	@xrun -sv -64 -v93 -sem2009 -smartorder -timescale 1ns/1ps +tue \
 	+access+rwc \
 	-svseed ${SEED} \
-	+incdir+"../rtl/apb_i2s"
-	+incdir+"../rtl/common"
-	+incdir+"../rtl/fifo_buffer"
+	+incdir+"../rtl/apb_i2s" \
+	+incdir+"../rtl/common" \
+	+incdir+"../rtl/fifo_buffer" \
 	${IRUN_GUI} \
-	../rtl/apb_i2s/apb_i2s.sv
+	${NCINPUT} \
+	../rtl/apb_i2s/apb_i2s.sv \
 	../verification/tb.sv
 
 #clean sim folder
+clean:
+	@rm -rf xcelium.d
+	@rm 	*.key
+	@rm	*.log
+	@rm	*.history
