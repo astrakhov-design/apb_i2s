@@ -20,26 +20,38 @@ module tb;
     nrst  <= 1;
   end
 
-//  APB_BUS.Master      apb_master;
-//  i2s_interface.Slave i2s_slave;
+  APB_BUS      apb_slave();
+  i2s_interface i2s_slave();
 
 /* interconnection */
 apb_i2s DUT(
   .i_clk(clk),
   .i_rst_n(nrst),
-  .apb_slave(APB_BUS.Master),
-  .i2s_master(i2s_interface.Slave)
+  .apb_slave(apb_slave),
+  .i2s_master(i2s_slave)
 );
 
-/*
+`include "apb_tasks.sv"
 
-task apb_send(
-  input bit [31:0]  address,
-  input bit [31:0]  data
-);
+bit [31:0]  apb_data_out;
+bit [31:0]  apb_data_in;
+//simple test for I/O registers
+initial begin
+  repeat(50) @ (posedge clk);
+  //CHECK SR REGISTER
+  read_apb(`SR_ADDR, apb_data_out);
+  assert(apb_data_out[3:0] == 4'b1010) else
+    $error("SR register is incorrect!");
+  repeat(5) @ (posedge clk);
+  apb_data_in = $urandom;
+  write_apb(`TXR_ADDR, apb_data_in);
+  //check if SR_reg.fifor_emprty equals 0
+  read_apb(`SR_ADDR, apb_data_out);
+  assert(apb_data_out[3:0] == 4'b0010) else
+    $error("SR register is incorrect!");
+  write_apb(`TXL_ADDR, apb_data_in);
+end
 
-endtask
 
-*/
 
 endmodule

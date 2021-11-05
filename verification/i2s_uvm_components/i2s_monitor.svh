@@ -55,3 +55,13 @@ virtual task run_phase (uvm_phase phase);
       ->right_channel_select;
       //send LSB of left channel lo data_left
       data_left_ = {data_left_[30:0], i2s_vif.TD};
+      while(i2s_vif.WS) begin
+        repeat(1) @ (negedge i2s_vif.TCLK);
+        data_right_ = {data_right_[30:0], i2s_vif.TD};
+      end
+    end
+    join
+  end
+endtask
+
+endclass

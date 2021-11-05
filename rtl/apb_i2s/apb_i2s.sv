@@ -127,15 +127,15 @@ fifo_buffer #(
   .rd(buffer_read),
   .wr(txr_write),
   .w_data(txr_bus),
-  .empty(SR.fifor_emprty),
+  .empty(SR.fifor_empty),
   .full(SR.fifor_full),
   .r_data(txr_out)
 );
 
 /* i2s master module */
 i2s_master i2s_tx(
-  .clk(clk),
-  .nrst(nrst),
+  .clk(i_clk),
+  .nrst(i_rst_n),
   .enable(CR.I2S_ENABLE),
   .data_left(txl_out),
   .data_right(txr_out),
