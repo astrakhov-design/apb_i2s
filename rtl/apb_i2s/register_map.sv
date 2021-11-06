@@ -20,7 +20,8 @@ package register_map;
 
 //STATE REGISTER
   typedef struct packed {
-    logic [27:0]  RESERVED;
+    logic [26:0]  RESERVED;
+	logic		  i2s_tx_done;
     logic         fifor_empty;
     logic         fifor_full;
     logic         fifol_empty;

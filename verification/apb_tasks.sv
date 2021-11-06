@@ -53,7 +53,7 @@ task read_apb(
 
   data = apb_slave.prdata;
   if(!display_flag) begin
-    $display("  read: addr 0x%8x, data 0x%8x"),
+    $display("  read: addr 0x%8x, data 0x%8x",
                 address, apb_slave.prdata);
   end
 

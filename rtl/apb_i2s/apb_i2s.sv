@@ -22,8 +22,8 @@ import register_map::*;
 address_map addr;
 CR_reg      CR;
 SR_reg      SR;
-TXR_reg     TXR;
-TXL_reg     TXL;
+
+assign SR.RESERVED = 'h0;
 
 /* Native interface for access to register */
 logic         rd;
@@ -31,6 +31,8 @@ logic         rd_done;
 logic         wr;
 logic [31:0]  wdata;
 logic [31:0]  rdata;
+logic i2s_tx_enable;
+logic	i2s_tx_done;
 
 assign wr               = apb_slave.psel    &
                           apb_slave.penable &
@@ -72,13 +74,10 @@ assign apb_slave.pready  =  1'b1;
       CR  <=  'h0;
     end
     else begin
-      if (wr) begin
-        case(addr)
-          CR_ADDR:  begin
-                      CR  <=  wdata[0];
-                    end
-        endcase
-      end
+      if (wr && (addr == CR_ADDR))
+        CR  <=  wdata[0];
+      else
+        CR  <=  {31'h0, i2s_tx_enable};
     end
   end
 
@@ -99,6 +98,26 @@ assign apb_slave.pready  =  1'b1;
   logic         buffer_read;
   logic [31:0]  txl_out;
   logic [31:0]  txr_out;
+
+/*automatic switch-off transmitter if one of fifo buffer is empty */
+
+	always_comb begin
+		if(i2s_tx_done)
+			i2s_tx_enable = (~(SR.fifol_empty | SR.fifor_empty)) ?
+                          CR.I2S_ENABLE : 1'b0;
+		else
+			i2s_tx_enable = CR.I2S_ENABLE;
+	end
+
+/* SR.i2s_tx_done logic */
+	always_ff @ (posedge i_clk, negedge i_rst_n) begin
+		if(!i_rst_n)
+			SR.i2s_tx_done	<=	1'b0;
+		else if (i2s_tx_done & SR.fifor_empty & SR.fifol_empty)
+			SR.i2s_tx_done	<=	1'b1;
+		else if (!SR.fifor_empty | !SR.fifol_empty)
+			SR.i2s_tx_done	<=	1'b0;
+	end
 
 /*Module interconnection */
 
@@ -136,10 +155,11 @@ fifo_buffer #(
 i2s_master i2s_tx(
   .clk(i_clk),
   .nrst(i_rst_n),
-  .enable(CR.I2S_ENABLE),
+  .enable(i2s_tx_enable),
   .data_left(txl_out),
   .data_right(txr_out),
   .data_rqst(buffer_read),
+	.tx_done(i2s_tx_done),
   .tclk(i2s_master.TCLK),
   .ws(i2s_master.WS),
   .td(i2s_master.TD)

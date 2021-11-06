@@ -24,6 +24,7 @@ all:
 	+incdir+"../rtl/apb_i2s" \
 	+incdir+"../rtl/common" \
 	+incdir+"../rtl/fifo_buffer" \
+	+incdir+"../verification" \
 	${IRUN_GUI} \
 	${NCINPUT} \
 	../rtl/apb_i2s/apb_i2s.sv \

@@ -10,6 +10,7 @@ module i2s_master(
   input logic [31:0]  data_right,
 
   output logic        data_rqst,
+	output logic				tx_done,
 
   output logic        tclk,
   output logic        ws,
@@ -25,6 +26,8 @@ always_ff @ (posedge clk, negedge nrst)
     tclk_counter  <=  'h4;
   else if (enable)
     tclk_counter  <=  tclk_counter + 1'b1;
+	else
+		tclk_counter	<=	'h4;
 
 assign tclk_prefall = (tclk_counter == 'h7);
 assign tclk         = tclk_counter[2];
@@ -44,13 +47,17 @@ always_ff @ (posedge clk, negedge nrst) begin
       if(tclk_prefall) begin
         bit_cntr  <=  bit_cntr + 1'b1;
         if(bit_cntr == 'h0)
-          shift_reg <= ws_reg ? data_right : data_right;
+          shift_reg <= ws_reg ? data_right : data_left;
         else
           shift_reg <= shift_reg << 1;
       end
-    end
+		end
+		else begin
+			bit_cntr	<=	'h0;
+			shift_reg	<=	'h0;
+    	end
   end
-  end
+end
 
 always_ff @ (posedge clk, negedge nrst) begin
   if(!nrst)
@@ -63,7 +70,8 @@ always_ff @ (posedge clk, negedge nrst) begin
 end
 
 assign ws = ws_reg;
-assign td = shift_reg[31];
-assign data_rqst = (tclk_counter == 'h6) && (bit_cntr == 'h0) && enable;
+assign td = enable ? shift_reg[31] : 1'bz;
+assign data_rqst = (tclk_counter == 'h6) && (bit_cntr == 'h1F) && enable && ws_reg;
+assign tx_done = (tclk_counter == 'h0) && (bit_cntr == 'h01) && !ws_reg;
 
 endmodule
