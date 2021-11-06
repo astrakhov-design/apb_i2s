@@ -17,18 +17,25 @@ class i2s_monitor extends uvm_monitor # (i2s_seq_item);
   bit [31:0] data_left_;
   bit [31:0] data_right_;
 
-  uvm_analysis_port # (i2s_seq_item) mon_analysis_port;
+  int transaction_counter;
+  int transaction_counter_old;
+
+  uvm_analysis_port # (i2s_seq_item) i2s_mon_analysis_port;
+
+  //plaseholder to capture transaction info
+  i2s_seq_item trans_collected;
 
   //Constructor for this class
-  function new (string name, uvm_componenet_parent = null);
+  function new (string name, uvm_componenet parent);
     super.new(name, parent);
+    trans_collected = new();
+    transaction_counter = 0;
+    //create an instance of the analysis port
+    mon_analysis_port = new ("mon_analysis_port", this);
   endfunction
 
   virtual function build_phase (uvm_phase phase);
     super.build_phase(phase);
-
-  //create an instance of the analysis port
-  mon_analysis_port = new ("mon_analysis_port", this);
 
   //get virtual interface handle from the configuration_db
   if(!uvm_config_db #(virtual i2s_uvc_interface) :: get(this, "", "i2s_vif", i2s_vif)) begin
@@ -37,21 +44,23 @@ class i2s_monitor extends uvm_monitor # (i2s_seq_item);
 endfunction
 
 virtual task run_phase (uvm_phase phase);
-  i2s_seq_item i2s_data_obj = i2s_seq_item::type_id::create("i2s_data_obj", this);
+  transaction_counter = 0;
+  transaction_counter_old = 0;
   forever begin
-    fork
+    left_channel_started  = 0;
+    right_channel_started = 0;
     //change WS to left channel package
-    @(negedge i2s_vif.WS) begin
+    fork
+    @(negedge i2s_vif.WS) begin //first process
       ->left_channel_select;
-      //send LSB of right channel to data_right
-      data_right_ = {data_right_[30:0], i2s_vif.TD};
+      repeat(1) @ (negedge i2s_vif.TCLK);
+      transaction_counter++;
       //start to write in left channel
       while(!i2s_vif.WS) begin
-        repeat(1) @ (negedge i2s_vif.TCLK);
         data_left_ = {data_left_[30:0], i2s_vif.TD};
+        repeat(1) @ (negedge i2s_vif.TCLK);
       end
-    end
-    @(posedge i2s_uvc.WS) begin
+    @(posedge i2s_uvc.WS);
       ->right_channel_select;
       //send LSB of left channel lo data_left
       data_left_ = {data_left_[30:0], i2s_vif.TD};
@@ -59,8 +68,18 @@ virtual task run_phase (uvm_phase phase);
         repeat(1) @ (negedge i2s_vif.TCLK);
         data_right_ = {data_right_[30:0], i2s_vif.TD};
       end
+      ->right_channel_lsb;
     end
-    join
+    @(right_channel_lsb) begin //second sub-process
+      @(negedge i2s_vif.WS);
+      data_right_ = {data_right_[30:0], i2s_vif.TD};
+      repeat(1) @ (negedge i2s_vif.TCLK);
+      trans_collected.data_left = data_left_;
+      trans_collected.data_right = data_right_;
+      i2s_mon_analysis_port.write(trans_collected);
+      trans_collected.print();
+    end
+  join_none
   end
 endtask
 

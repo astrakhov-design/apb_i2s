@@ -13,7 +13,7 @@ else
 endif
 
 ifeq (${CCOV}, 1)
-  NCCOV = +nccoverage+all
+  NCCOV = +nccoverage+all -covtest ${TN}
 endif
 
 #no_uvm startup
@@ -29,6 +29,34 @@ all:
 	${NCINPUT} \
 	../rtl/apb_i2s/apb_i2s.sv \
 	../verification/tb.sv
+
+uvm:
+	@xrun -sv -64 -v93 -sem2009 -smartorder -timescale 1ns/1ps -uvm +tue \
+	+access+rwc \
+	-svseed ${SEED} \
+	+incdir+"../rtl/apb_i2s" \
+	+incdir+"../rtl/common" \
+	+incdir+"../rtl/fifo_buffer" \
+	+incdir+"../verification/apb_uvm_components" \
+	+incdir+"../verification/i2s_uvm_components" \
+	+incdir+"../verification/uvm_tests" \
+	+incdir+"../verification/uvm_tests/test_items" \
+	+UVM_TESTNAME=${TN} \
+	+UVM_VERBOSITY=${UVM_VERB} \
+	+nowarn+FUNTSK \
+	+nowarn+MEMODR \
+	+nowarn+REPCNT \
+	+nowarn+LVLFNC \
+	${NCCOV} \
+	${NCINPUT} \
+	${IRUN_GUI} \
+	${DEFINES} \
+	../rtl/common/apb_interface.sv \
+	../rtl/common/i2s_interface.sv \
+	../rtl/apb_i2s/apb_i2s.sv \
+	../verification/apb_uvm_components/apb_interface.sv \
+	../verification/i2s_uvm_components/i2s_uvc_interface.sv \
+	../verification/tb_uvm.sv
 
 #clean sim folder
 clean:

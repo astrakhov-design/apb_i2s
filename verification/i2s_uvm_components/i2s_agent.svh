@@ -6,7 +6,7 @@ class i2s_agent extends uvm_agent;
 
   i2s_monitor i2s_monitor;
 
-  funciion new (string name = "i2s_agent", uvm_componenet_parent = null);
+  funciion new (string name = "i2s_agent", uvm_componenet parent);
     super.new(name, parent);
   endfunction
 
