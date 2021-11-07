@@ -11,16 +11,19 @@ class i2s_sequence extends uvm_sequence #(i2s_seq_item);
   endfunction
 
   virtual task body();
-    req = i2s_seq_item::type_id::create("req");
-    wait_for_grant();
-//    send_request(req);
-//    wait_for_item_done();
-//    get_responce(rsp);
+    repeat(2) begin
+      req = i2s_seq_item::type_id::create("req");
+      wait_for_grant();
+      req.randomize();
+      send_request(req);
+      wait_for_item_done();
+      get_responce(req);
+    end
   endtask
 
 endclass
 
-class i2s_rcv extends i2s_sequence # (i2s_seq_item);
+class i2s_rcv extends uvm_sequence#(i2s_seq_item);
   `uvm_object_utils(i2s_rcv)
 
   bit [31:0] data_left_;

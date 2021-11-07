@@ -2,8 +2,7 @@
 //author: astrakhov, JSC MERI
 //date: 31.10.2021
 
-class i2s_seq_item extends uvm_seq_item;
-  `uvm_component_utils(i2s_seq_item)
+class i2s_seq_item extends uvm_sequence_item;
 
   //Data of the left channel
   rand bit [31:0] data_left;
@@ -18,7 +17,7 @@ class i2s_seq_item extends uvm_seq_item;
   `uvm_object_utils_end
 
   //constructor of class
-  funciton new(string name = "i2s_seq_item");
+  function new(string name = "i2s_seq_item");
     super.new(name);
   endfunction
 

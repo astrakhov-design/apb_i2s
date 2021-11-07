@@ -1,5 +1,4 @@
 class apb_seq_item extends uvm_sequence_item;
-  `uvm_component_utils(apb_seq_item)
 
   rand bit [`uvm_apb_dsize-1:0] rw_data;
   rand bit [`uvm_apb_asize-1:0] addr;

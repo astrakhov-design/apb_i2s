@@ -37,10 +37,10 @@ uvm:
 	+incdir+"../rtl/apb_i2s" \
 	+incdir+"../rtl/common" \
 	+incdir+"../rtl/fifo_buffer" \
-	+incdir+"../verification/apb_uvm_components" \
-	+incdir+"../verification/i2s_uvm_components" \
 	+incdir+"../verification/uvm_tests" \
 	+incdir+"../verification/uvm_tests/test_items" \
+	+incdir+"../verification/apb_uvm_components" \
+	+incdir+"../verification/i2s_uvm_components" \
 	+UVM_TESTNAME=${TN} \
 	+UVM_VERBOSITY=${UVM_VERB} \
 	+nowarn+FUNTSK \
@@ -64,3 +64,5 @@ clean:
 	@rm 	*.key
 	@rm	*.log
 	@rm	*.history
+	@rm	*.diag
+	@rm -rf waves.shm

@@ -1,7 +1,6 @@
 //testbench with UVM
 //author: astrakhov, JSC MERI
 //date: 05.11.2021
-`timescale  1ns / 1ns
 
 `include "uvm_macros.svh"
 `include "test_pkg.sv"
@@ -23,11 +22,11 @@ module tb_uvm;
     end
 
 //declare RTL interfaces
-  i2s_interface i2s_vif();
+  i2s_interface i2s_if();
   APB_BUS       apb_slave();
 
 //declare UVM interfaces
-  i2s_uvc_interface i2s_if_uvc(.TCLK(i2s_vif.TCLK));
+  i2s_uvc_interface i2s_vif(.TCLK(i2s_if.TCLK));
   apb_interface     apb_if_uvc(clk);
 
 //interconnection between interfaces
@@ -40,22 +39,22 @@ module tb_uvm;
   assign apb_if_uvc.pready  = apb_slave.pready;
   assign apb_if_uvc.pslverr = apb_slave.pslverr;
 
-  assign i2s_if_uvc.WS      = i2s_vif.WS;
-  assign i2s_if_uvc.TD      = i2s_vif.TD;
+  assign i2s_vif.WS      = i2s_if.WS;
+  assign i2s_vif.TD      = i2s_if.TD;
 
 /* interconnection */
   apb_i2s DUT(
     .i_clk(clk),
     .i_rst_n(nrst),
     .apb_slave(apb_slave),
-    .i2s_master(i2s_vif)
+    .i2s_master(i2s_if)
   );
 
 //---------------------------
   initial begin
     $timeformat(-12, 0, " ps",10);
     uvm_config_db#(virtual apb_interface)::set(uvm_root::get(),"*","apb_if",apb_if_uvc);
-    uvm_config_db#(virtual i2s_interface)::set(uvm_root::get(),"*","i2s_vif",i2s_vif);
+    uvm_config_db#(virtual i2s_uvc_interface)::set(uvm_root::get(),"*","i2s_vif",i2s_vif);
   end
 
   initial begin

@@ -2,7 +2,7 @@
 //author: astrakhov, JSC MERI
 //date: 31.10.2021
 
-class i2s_monitor extends uvm_monitor # (i2s_seq_item);
+class i2s_monitor extends uvm_monitor;
   `uvm_component_utils(i2s_monitor)
 
   virtual i2s_uvc_interface i2s_vif;
@@ -26,15 +26,15 @@ class i2s_monitor extends uvm_monitor # (i2s_seq_item);
   i2s_seq_item trans_collected;
 
   //Constructor for this class
-  function new (string name, uvm_componenet parent);
+  function new (string name, uvm_component parent);
     super.new(name, parent);
     trans_collected = new();
     transaction_counter = 0;
     //create an instance of the analysis port
-    mon_analysis_port = new ("mon_analysis_port", this);
+    i2s_mon_analysis_port = new ("i2s_mon_analysis_port", this);
   endfunction
 
-  virtual function build_phase (uvm_phase phase);
+  function void build_phase (uvm_phase phase);
     super.build_phase(phase);
 
   //get virtual interface handle from the configuration_db
@@ -47,8 +47,6 @@ virtual task run_phase (uvm_phase phase);
   transaction_counter = 0;
   transaction_counter_old = 0;
   forever begin
-    left_channel_started  = 0;
-    right_channel_started = 0;
     //change WS to left channel package
     fork
     @(negedge i2s_vif.WS) begin //first process
@@ -60,7 +58,7 @@ virtual task run_phase (uvm_phase phase);
         data_left_ = {data_left_[30:0], i2s_vif.TD};
         repeat(1) @ (negedge i2s_vif.TCLK);
       end
-    @(posedge i2s_uvc.WS);
+    @(posedge i2s_vif.WS);
       ->right_channel_select;
       //send LSB of left channel lo data_left
       data_left_ = {data_left_[30:0], i2s_vif.TD};
