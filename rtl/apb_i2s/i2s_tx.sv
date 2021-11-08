@@ -23,17 +23,17 @@ logic       tclk_prefall;
 
 always_ff @ (posedge clk, negedge nrst)
   if(!nrst)
-    tclk_counter  <=  'h4;
+    tclk_counter  <=  'h0;
   else if (enable)
     tclk_counter  <=  tclk_counter + 1'b1;
 	else
-		tclk_counter	<=	'h4;
+		tclk_counter	<=	'h0;
 
 assign tclk_prefall = (tclk_counter == 'h7);
-assign tclk         = tclk_counter[2];
+assign tclk         = enable ? tclk_counter[2] : 1'b1;
 
-logic [4:0] bit_cntr;
-logic [31:0] shift_reg;
+logic [5:0] bit_cntr;
+logic [63:0] shift_reg;
 
 logic ws_reg;
 
@@ -47,7 +47,7 @@ always_ff @ (posedge clk, negedge nrst) begin
       if(tclk_prefall) begin
         bit_cntr  <=  bit_cntr + 1'b1;
         if(bit_cntr == 'h0)
-          shift_reg <= ws_reg ? data_right : data_left;
+          shift_reg <= {data_left, data_right};
         else
           shift_reg <= shift_reg << 1;
       end
@@ -59,19 +59,23 @@ always_ff @ (posedge clk, negedge nrst) begin
   end
 end
 
+/*
 always_ff @ (posedge clk, negedge nrst) begin
   if(!nrst)
-    ws_reg  <=  1'b0;
+    ws_reg  <=  1'b1;
   else begin
     if(enable)
-      if(tclk_prefall && (bit_cntr == 5'd31))
-        ws_reg <= ~ws_reg;
+        ws_reg <= bit_cntr[5];
+    else
+        ws_reg <= 1'b1;
   end
 end
+*/
 
-assign ws = ws_reg;
-assign td = enable ? shift_reg[31] : 1'bz;
-assign data_rqst = (tclk_counter == 'h6) && (bit_cntr == 'h1F) && enable && ws_reg;
-assign tx_done = (tclk_counter == 'h0) && (bit_cntr == 'h01) && !ws_reg;
+
+assign ws = enable ? bit_cntr[5] : 1'b1;
+assign td = shift_reg[63];
+assign data_rqst = (tclk_counter == 'h6) && (bit_cntr == 'd63) && enable && ws;
+assign tx_done = (tclk_counter == 'h0) && (bit_cntr == 'h01) && !ws;
 
 endmodule

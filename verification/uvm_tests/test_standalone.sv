@@ -2,7 +2,7 @@
 //author: astrakhov, JSC MERI
 //date: 06.11.2021
 
-//`include "macros.svh"
+`include "macros.svh"
 `include "uvm_macros.svh"
 
 
@@ -58,14 +58,11 @@ class test_standalone extends uvm_test;
     
     super.run_phase(phase);
     phase.raise_objection(this);
-    
-    repeat(20) @ (posedge apb_env_i.apb_agent_i.monitor.apb_if.clk);
-    `uvm_info("STANDALONE", $sformatf("DEBUG"), UVM_NONE)
-    
+        
     this.run_test_items();
 
     phase.drop_objection(this);
-    phase.phase_done.set_drain_time(this, 20ns);
+    phase.phase_done.set_drain_time(this, 500);
 
   endtask
 
@@ -88,8 +85,14 @@ class test_standalone extends uvm_test;
     end
   endtask
 
+bit [31:0]  data_left_;
+bit [31:0]  data_right_;
+
+bit [31:0]  DATA_LEFT [$];
+bit [31:0]  DATA_RIGHT [$];
+
 endclass
 
-
+`create_test(default_test)
 
 //`create_test(debug_scratch)

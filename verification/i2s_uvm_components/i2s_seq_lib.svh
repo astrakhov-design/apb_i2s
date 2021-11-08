@@ -17,7 +17,6 @@ class i2s_sequence extends uvm_sequence #(i2s_seq_item);
       req.randomize();
       send_request(req);
       wait_for_item_done();
-      get_responce(req);
     end
   endtask
 

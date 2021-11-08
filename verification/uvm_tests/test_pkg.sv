@@ -11,7 +11,8 @@ package test_pkg;
 	import apb_pkg::*;
 
   `include "uvm_macros.svh"
+  `include "register_defs.svh"
   `include "test_standalone.sv"
-  `include "debug_scratch.sv"
+//  `include "debug_scratch.sv"
 
 endpackage
