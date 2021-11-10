@@ -2,7 +2,7 @@
 //author: astrakhov, JSC MERI
 //date: 06.11.2021
 
-`include "macros.svh"
+//`include "macros.svh"
 `include "uvm_macros.svh"
 
 
@@ -77,11 +77,32 @@ class test_standalone extends uvm_test;
       apb_wr_i.start(apb_env_i.apb_agent_i.sequencer);
     end
   endtask
+  
+  virtual task apb_read(
+    input [31:0] addr,
+    input [31:0] data_);
+    begin
+     apb_rd_i.rd_seq_addr = addr;
+     apb_env_i.apb_scb_i.payload_exp_qu.push_back(data_);
+     apb_rd_i.start(apb_env_i.apb_agent_i.sequencer);
+    end
+  endtask
 
   virtual task wait_n_cycles(
     input integer ncycles);
     begin
       repeat(ncycles) @ (posedge apb_env_i.apb_agent_i.monitor.apb_if.clk);
+    end
+  endtask
+  
+  virtual task rcv_i2s(
+    input [31:0]  data_left,
+    input [31:0]  data_right
+  );
+    begin
+      i2s_env_i.i2s_scb_i.data_left_exp_qu.push_back(data_left);
+      i2s_env_i.i2s_scb_i.data_right_exp_qu.push_back(data_right);
+      @(i2s_env_i.i2s_agent_i.monitor.recording_finished);
     end
   endtask
 
@@ -92,7 +113,3 @@ bit [31:0]  DATA_LEFT [$];
 bit [31:0]  DATA_RIGHT [$];
 
 endclass
-
-`create_test(default_test)
-
-//`create_test(debug_scratch)

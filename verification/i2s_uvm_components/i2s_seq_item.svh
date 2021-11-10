@@ -12,8 +12,8 @@ class i2s_seq_item extends uvm_sequence_item;
 
   //utility and field macros
   `uvm_object_utils_begin(i2s_seq_item)
-    `uvm_field_int(data_left,UVM_ALL_ON)
-    `uvm_field_int(data_right,UVM_ALL_ON)
+    `uvm_field_int(data_left, UVM_ALL_ON)
+    `uvm_field_int(data_right, UVM_ALL_ON)
   `uvm_object_utils_end
 
   //constructor of class

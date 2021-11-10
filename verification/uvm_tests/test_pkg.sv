@@ -13,6 +13,9 @@ package test_pkg;
   `include "uvm_macros.svh"
   `include "register_defs.svh"
   `include "test_standalone.sv"
+  
+//include childe tests
 //  `include "debug_scratch.sv"
+  `include "default_test.sv"
 
 endpackage

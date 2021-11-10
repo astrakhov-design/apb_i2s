@@ -1,14 +1,12 @@
 //APB_I2S HEAD MODULE
 //author: astrakhov, JSC MERI
 //date: 25.10.2021
-`define FIFO_DEPTH  2
 
-`include "register_map.sv"
-`include "i2s_tx.sv"
-`include "fifo_buffer.sv"
-
-
-module apb_i2s(
+module apb_i2s #(
+  parameter FIFO_DEPTH = 2,
+  parameter TCLK_PERIOD = 50
+)
+(
   input logic i_clk,
   input logic i_rst_n,
 
@@ -17,7 +15,7 @@ module apb_i2s(
 );
 
 /* REGISTER MAP */
-import register_map::*;
+import register_pkg::*;
 
 address_map addr;
 CR_reg      CR;
@@ -71,13 +69,13 @@ assign apb_slave.pready  =  1'b1;
 /* Write registers by SW */
   always_ff @ (posedge i_clk, negedge i_rst_n) begin
     if(~i_rst_n) begin
-      CR  <=  'h0;
+      CR.I2S_ENABLE  <=  'h0;
     end
     else begin
       if (wr && (addr == CR_ADDR))
-        CR  <=  wdata[0];
+        CR.I2S_ENABLE  <=  wdata[0];
       else
-        CR  <=  {31'h0, i2s_tx_enable};
+        CR.I2S_ENABLE  <=   i2s_tx_enable;
     end
   end
 
@@ -101,30 +99,40 @@ assign apb_slave.pready  =  1'b1;
 
 /*automatic switch-off transmitter if one of fifo buffer is empty */
 
-	always_comb begin
-		if(i2s_tx_done)
-			i2s_tx_enable = (~(SR.fifol_empty | SR.fifor_empty)) ?
+	assign i2s_tx_enable = (~(SR.fifol_empty | SR.fifor_empty)) ?
                           CR.I2S_ENABLE : 1'b0;
-		else
-			i2s_tx_enable = CR.I2S_ENABLE;
-	end
 
 /* SR.i2s_tx_done logic */
 	always_ff @ (posedge i_clk, negedge i_rst_n) begin
 		if(!i_rst_n)
 			SR.i2s_tx_done	<=	1'b0;
-		else if (i2s_tx_done & SR.fifor_empty & SR.fifol_empty)
+		else if (SR.fifor_empty && SR.fifol_empty)
 			SR.i2s_tx_done	<=	1'b1;
-		else if (!SR.fifor_empty | !SR.fifol_empty)
+		else
 			SR.i2s_tx_done	<=	1'b0;
 	end
+	
+logic tclk_generated;
+logic ws_created;
 
 /*Module interconnection */
+tclk_oscillator #(
+  .TCLK_PERIOD(TCLK_PERIOD)
+) tclk_gen(
+  .tclk(tclk_generated)
+);
 
+ws_generator ws_gen(
+  .i_tclk(tclk_generated),
+  .i_nrst(i_rst_n),
+  .i_enable(CR.I2S_ENABLE),
+  .o_ws(ws_created)
+);
+  
 /* FIFO buffer for Left Channel */
 fifo_buffer #(
   .B(32),
-  .W(`FIFO_DEPTH)
+  .W(FIFO_DEPTH)
 ) fifo_txl(
   .clk(i_clk),
   .rst(i_rst_n),
@@ -139,7 +147,7 @@ fifo_buffer #(
 /* FIFO buffer for Right Channel */
 fifo_buffer #(
   .B(32),
-  .W(`FIFO_DEPTH)
+  .W(FIFO_DEPTH)
 ) fifo_txr(
   .clk(i_clk),
   .rst(i_rst_n),
@@ -152,17 +160,18 @@ fifo_buffer #(
 );
 
 /* i2s master module */
-i2s_master i2s_tx(
-  .clk(i_clk),
-  .nrst(i_rst_n),
-  .enable(i2s_tx_enable),
-  .data_left(txl_out),
-  .data_right(txr_out),
+i2s_tx i2s_tx_wrapper(
+  .i_clk(i_clk),
+  .i_nrst(i_rst_n),
+  .i_enable(i2s_tx_enable),
+  .i_data_left(txl_out),
+  .i_data_right(txr_out),
+  .i_tclk(tclk_generated),
+  .i_ws(ws_created),
   .data_rqst(buffer_read),
-	.tx_done(i2s_tx_done),
-  .tclk(i2s_master.TCLK),
-  .ws(i2s_master.WS),
-  .td(i2s_master.TD)
+  .o_tclk(i2s_master.TCLK),
+  .o_ws(i2s_master.WS),
+  .o_td(i2s_master.TD)
 );
 
 endmodule

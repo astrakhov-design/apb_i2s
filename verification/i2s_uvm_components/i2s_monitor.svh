@@ -7,15 +7,16 @@ class i2s_monitor extends uvm_monitor;
 
   virtual i2s_uvc_interface i2s_vif;
 
-  event left_channel_select;
-//  event left_channel_msb;
-//  event left_channel_lsb;
-  event right_channel_select;
-//  event right_channel_msb;
-//  event right_channel_lsb;
+  event recording_started;
+  event recording_command;
+  event recording_finished;
+  
+  event right_recording;
 
   bit [31:0] data_left_;
   bit [31:0] data_right_;
+  
+  bit        WSP;
 
   int left_cntr;
   int right_cntr;
@@ -47,26 +48,34 @@ virtual task run_phase (uvm_phase phase);
   left_cntr   = 0;
   right_cntr  = 0;
   forever begin
+    @(posedge i2s_vif.TCLK);
     fork
-     @(negedge i2s_vif.WS) begin //first process
-       repeat(1) @ (posedge i2s_vif.TCLK);
-       ->left_channel_select;
-     end
-     @(left_channel_select) begin
-       for(left_cntr = 0; left_cntr < 32; left_cntr++) begin
-         repeat(1) @ (posedge i2s_vif.TCLK);
-         data_left_ = {data_left_[30:0], i2s_vif.TD};
-       end     
-      for(right_cntr = 0; right_cntr < 32; right_cntr++) begin
+      @(negedge i2s_vif.WS) begin //catch WS negedge pulse
         repeat(1) @ (posedge i2s_vif.TCLK);
-        data_right_ = {data_right_[30:0], i2s_vif.TD};
+        WSP = 1;
+        repeat(1) @ (posedge i2s_vif.TCLK);
+        WSP = 0;
       end
-      trans_collected.data_left = data_left_;
-      trans_collected.data_right = data_right_;
-      i2s_mon_analysis_port.write(trans_collected);
-      trans_collected.print();
-     end
-  join_any
+      @(negedge WSP) begin //first process
+          ->recording_started;
+        for(left_cntr = 0; left_cntr < 32; left_cntr++) begin
+          data_left_ = {data_left_[30:0], i2s_vif.TD};
+          repeat(1) @ (posedge i2s_vif.TCLK);          
+          if(left_cntr == 31)
+            ->right_recording;
+        end
+        for(right_cntr = 0; right_cntr < 32; right_cntr++) begin
+          data_right_ = {data_right_[30:0], i2s_vif.TD};
+          repeat(1) @ (posedge i2s_vif.TCLK);          
+        end
+//        ->recording_finished;
+        trans_collected.data_left = data_left_;
+        trans_collected.data_right = data_right_;
+        i2s_mon_analysis_port.write(trans_collected);
+        ->recording_finished;        
+        trans_collected.print();
+      end
+     join_any
   end
 endtask
 

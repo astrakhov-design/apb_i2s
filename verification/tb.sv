@@ -3,8 +3,8 @@
 //date: 28.10.2021
 `timescale 1ns / 1ns
 
-`include "apb_interface.sv"
-`include "i2s_interface.sv"
+//`include "apb_interface.sv"
+//`include "i2s_interface.sv"
 
 `include "register_defs.svh"
 
@@ -21,11 +21,18 @@ module tb;
     nrst  <= 1;
   end
 
-  APB_BUS      apb_slave();
+  APB_BUS       apb_slave();
   i2s_interface i2s_slave();
+  
+  localparam  FIFO_DEPTH  = 2;
+  localparam  TCLK_PERIOD = 25;
 
 /* interconnection */
-apb_i2s DUT(
+apb_i2s #(
+  .FIFO_DEPTH(FIFO_DEPTH),
+  .TCLK_PERIOD(TCLK_PERIOD)
+)
+DUT(
   .i_clk(clk),
   .i_rst_n(nrst),
   .apb_slave(apb_slave),

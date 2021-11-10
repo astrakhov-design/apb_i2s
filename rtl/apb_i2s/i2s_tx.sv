@@ -2,80 +2,105 @@
 //author: astrakhov, JSC MERI
 //date: 26.10.2021
 
-module i2s_master(
-  input logic clk,
-  input logic nrst,
-  input logic enable,
-  input logic [31:0]  data_left,
-  input logic [31:0]  data_right,
+module i2s_tx(
+  input logic         i_clk,
+  input logic         i_nrst,
+  input logic         i_enable,
+  
+//data declaration
+  input logic [31:0]  i_data_left,
+  input logic [31:0]  i_data_right,
+  
+//input WS and SCLK
+  input logic         i_tclk,
+  input logic         i_ws,
 
+//output system signals
   output logic        data_rqst,
-	output logic				tx_done,
 
-  output logic        tclk,
-  output logic        ws,
-  output logic        td
+//output signals
+  output logic        o_tclk,
+  output logic        o_ws,
+  output logic        o_td
 );
 
-//simple prescaler to 4
-logic [2:0] tclk_counter;
-logic       tclk_prefall;
+logic tclk_negedge;
+logic tclk_posedge;
+logic wsel_negedge;
+logic wsel_sync;
 
-always_ff @ (posedge clk, negedge nrst)
-  if(!nrst)
-    tclk_counter  <=  'h0;
-  else if (enable)
-    tclk_counter  <=  tclk_counter + 1'b1;
-	else
-		tclk_counter	<=	'h0;
+logic load_words;
 
-assign tclk_prefall = (tclk_counter == 'h7);
-assign tclk         = enable ? tclk_counter[2] : 1'b1;
+logic [5:0]   bit_cntr;
+logic [63:0]  shift_reg;
 
-logic [5:0] bit_cntr;
-logic [63:0] shift_reg;
+logic [1:0] rqst_cntr;  
 
-logic ws_reg;
+//sync tclk
+signal_sync sync_tclk(
+  .clk      (i_clk        ),
+  .nrst     (i_nrst       ),
+  .i_signal (i_tclk       ),
+  .o_signal (             ),
+  .o_valid  (             ),
+  .o_edge   (             ),
+  .o_posedge(tclk_posedge ),
+  .o_negedge(tclk_negedge )
+);
 
-always_ff @ (posedge clk, negedge nrst) begin
-  if(!nrst) begin
+//sync ws
+signal_sync sync_ws(
+  .clk      (i_clk         ),
+  .nrst     (i_nrst        ),
+  .i_signal (i_ws          ),
+  .o_signal (wsel_sync     ),
+  .o_valid  (              ),
+  .o_edge   (              ),
+  .o_posedge(              ),
+  .o_negedge(wsel_negedge  )
+);
+
+assign  load_words  = i_enable && (bit_cntr == 'h0) && tclk_negedge;
+assign  data_rqst   = i_enable && (bit_cntr == 'h0) && tclk_posedge && (rqst_cntr != 0);
+assign  o_td        = shift_reg[63];
+assign  o_ws        = wsel_sync;
+assign  o_tclk      = i_tclk;
+
+//data request counter
+always_ff @ (posedge i_clk, negedge i_nrst) begin
+  if(!i_nrst)
+    rqst_cntr <=  'h0;
+  else begin
+    if(i_enable && (bit_cntr == 'h1) && tclk_posedge)
+      rqst_cntr <= rqst_cntr + 1'b1;
+    else if(!i_enable && (rqst_cntr != 0))
+      rqst_cntr <= 2'b00;
+      
+    if(rqst_cntr == 2'b11)
+      rqst_cntr <=  2'b01;
+  end
+end
+
+always_ff @ (posedge i_clk, negedge i_nrst) begin
+  if(!i_nrst)
     bit_cntr  <=  'h0;
+  else if (i_enable) begin
+    if(wsel_negedge)
+      bit_cntr  <=  'h0;
+    else if(tclk_negedge)
+      bit_cntr  <=  bit_cntr - 1'b1;
+  end
+end
+
+always_ff @ (posedge i_clk, negedge i_nrst) begin
+  if(!i_nrst)
     shift_reg <=  'h0;
-  end
-  else begin
-    if(enable) begin
-      if(tclk_prefall) begin
-        bit_cntr  <=  bit_cntr + 1'b1;
-        if(bit_cntr == 'h0)
-          shift_reg <= {data_left, data_right};
-        else
-          shift_reg <= shift_reg << 1;
-      end
-		end
-		else begin
-			bit_cntr	<=	'h0;
-			shift_reg	<=	'h0;
-    	end
+  else if (i_enable) begin
+    if(load_words)
+      shift_reg <=  {i_data_left, i_data_right};
+    else if(tclk_negedge)
+      shift_reg <=  shift_reg << 1;
   end
 end
-
-/*
-always_ff @ (posedge clk, negedge nrst) begin
-  if(!nrst)
-    ws_reg  <=  1'b1;
-  else begin
-    if(enable)
-        ws_reg <= bit_cntr[5];
-    else
-        ws_reg <= 1'b1;
-  end
-end
-*/
-
-
-assign ws = enable ? bit_cntr[5] : 1'b1;
-assign td = shift_reg[63];
-assign data_rqst = (tclk_counter == 'h6) && (bit_cntr == 'd63) && enable && ws;
-assign tx_done = (tclk_counter == 'h0) && (bit_cntr == 'h01) && !ws;
 
 endmodule

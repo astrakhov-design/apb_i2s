@@ -2,7 +2,7 @@
 //author: astrakhov
 //date: 25.10.2021
 
-package register_map;
+package register_pkg;
 
 //address map
   typedef enum logic [1:0] {
