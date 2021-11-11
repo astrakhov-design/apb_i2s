@@ -41,9 +41,13 @@ module tb_uvm;
 
   assign i2s_vif.WS      = i2s_if.WS;
   assign i2s_vif.TD      = i2s_if.TD;
+  
+  localparam FIFO_DEPTH = 2;
 
 /* interconnection */
-  apb_i2s DUT(
+  apb_i2s #(
+    .FIFO_DEPTH(FIFO_DEPTH)
+  ) DUT(
     .i_clk(clk),
     .i_rst_n(nrst),
     .apb_slave(apb_slave),

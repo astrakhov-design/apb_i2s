@@ -21,7 +21,7 @@ package register_pkg;
 //STATE REGISTER
   typedef struct packed {
     logic [26:0]  RESERVED;
-	logic		  i2s_tx_done;
+  	logic		      i2s_tx_done;
     logic         fifor_empty;
     logic         fifor_full;
     logic         fifol_empty;

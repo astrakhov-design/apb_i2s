@@ -112,4 +112,13 @@ bit [31:0]  data_right_;
 bit [31:0]  DATA_LEFT [$];
 bit [31:0]  DATA_RIGHT [$];
 
+struct packed {
+  logic [26:0]  RESERVED;
+  logic         i2s_tx_done;
+  logic         fifor_empty;
+  logic         fifor_full;
+  logic         fifol_empty;
+  logic         fifol_full; 
+} SR_REG_test;
+
 endclass

@@ -1,0 +1,76 @@
+
+#
+# Mnemonic Maps
+#
+mmap new  -reuse -name {Boolean as Logic} -radix %b -contents {{%c=FALSE -edgepriority 1 -shape low}
+{%c=TRUE -edgepriority 1 -shape high}}
+mmap new  -reuse -name {Example Map} -radix %x -contents {{%b=11???? -bgcolor orange -label REG:%x -linecolor yellow -shape bus}
+{%x=1F -bgcolor red -label ERROR -linecolor white -shape EVENT}
+{%x=2C -bgcolor red -label ERROR -linecolor white -shape EVENT}
+{%x=* -label %x -linecolor gray -shape bus}}
+
+array unset createdGroup
+array set createdGroup {}
+#
+# Groups
+#
+if {[catch {group get -using [list APB_IF]}]} {
+set createdGroup([list APB_IF]) 1
+catch {group new -name APB_IF -overlay 0}
+}
+if {[catch {group get -using [list I2S_IF]}]} {
+set createdGroup([list I2S_IF]) 1
+catch {group new -name I2S_IF -overlay 0}
+}
+if {[catch {group get -using [list REGISTERS]}]} {
+set createdGroup([list REGISTERS]) 1
+catch {group new -name REGISTERS -overlay 0}
+}
+if {[info exists createdGroup([list APB_IF])]} {
+group using APB_IF
+group set -overlay 0
+group set -comment {}
+group clear 0 end
+group insert \
+    [subst  {[format {tb.apb_slave.Slave.paddr[31:0]}]} ] \
+    [subst  {[format {tb.apb_slave.Slave.penable}]} ] \
+    [subst  {[format {tb.apb_slave.Slave.prdata[31:0]}]} ] \
+    [subst  {[format {tb.apb_slave.Slave.pready}]} ] \
+    [subst  {[format {tb.apb_slave.Slave.psel}]} ] \
+    [subst  {[format {tb.apb_slave.Slave.pslverr}]} ] \
+    [subst  {[format {tb.apb_slave.Slave.pwdata[31:0]}]} ] \
+    [subst  {[format {tb.apb_slave.Slave.pwrite}]} ]
+}
+
+if {[info exists createdGroup([list I2S_IF])]} {
+group using I2S_IF
+group set -overlay 0
+group set -comment {}
+group clear 0 end
+group insert \
+    [subst  {[format {tb.i2s_slave.Master.TCLK}]} ] \
+    [subst  {[format {tb.i2s_slave.Master.TD}]} ] \
+    [subst  {[format {tb.i2s_slave.Master.WS}]} ]
+}
+
+if {[info exists createdGroup([list REGISTERS])]} {
+group using REGISTERS
+group set -overlay 0
+group set -comment {}
+group clear 0 end
+group insert \
+    [subst  {[format {tb.DUT.CR}]} ] \
+    [subst  {[format {tb.DUT.SR}]} ]
+}
+
+
+set groupId0 [waveform add -groups APB_IF]
+
+
+set groupId0 [waveform add -groups I2S_IF]
+
+
+set groupId0 [waveform add -groups REGISTERS]
+
+
+waveform xview limits 0 2000ps

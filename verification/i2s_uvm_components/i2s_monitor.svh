@@ -15,11 +15,8 @@ class i2s_monitor extends uvm_monitor;
 
   bit [31:0] data_left_;
   bit [31:0] data_right_;
-  
-  bit        WSP;
-
-  int left_cntr;
-  int right_cntr;
+  int  bit_cntr_left;
+  int  bit_cntr_right;
 
   uvm_analysis_port # (i2s_seq_item) i2s_mon_analysis_port;
 
@@ -45,30 +42,28 @@ class i2s_monitor extends uvm_monitor;
 endfunction
 
 virtual task run_phase (uvm_phase phase);
-  left_cntr   = 0;
-  right_cntr  = 0;
+  bit_cntr_left     = 0;
+  bit_cntr_right    = 0;
   forever begin
     @(posedge i2s_vif.TCLK);
-    fork
+     fork
       @(negedge i2s_vif.WS) begin //catch WS negedge pulse
-        repeat(1) @ (posedge i2s_vif.TCLK);
-        WSP = 1;
-        repeat(1) @ (posedge i2s_vif.TCLK);
-        WSP = 0;
-      end
-      @(negedge WSP) begin //first process
-          ->recording_started;
-        for(left_cntr = 0; left_cntr < 32; left_cntr++) begin
+        bit_cntr_left   = 0;
+        ->recording_started;
+        while(!i2s_vif.WS && (bit_cntr_left <= 31)) begin
+          repeat(1) @ (posedge i2s_vif.TCLK);
           data_left_ = {data_left_[30:0], i2s_vif.TD};
-          repeat(1) @ (posedge i2s_vif.TCLK);          
-          if(left_cntr == 31)
-            ->right_recording;
+          bit_cntr_left++;
         end
-        for(right_cntr = 0; right_cntr < 32; right_cntr++) begin
+      end
+      @(posedge i2s_vif.WS) begin //catch WS posedge pulse
+        bit_cntr_right  = 0;
+        ->right_recording;
+        while(i2s_vif.WS && (bit_cntr_right <= 31)) begin
+          repeat(1) @ (posedge i2s_vif.TCLK);
           data_right_ = {data_right_[30:0], i2s_vif.TD};
-          repeat(1) @ (posedge i2s_vif.TCLK);          
+          bit_cntr_right++;
         end
-//        ->recording_finished;
         trans_collected.data_left = data_left_;
         trans_collected.data_right = data_right_;
         i2s_mon_analysis_port.write(trans_collected);

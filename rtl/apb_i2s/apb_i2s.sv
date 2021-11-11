@@ -3,8 +3,7 @@
 //date: 25.10.2021
 
 module apb_i2s #(
-  parameter FIFO_DEPTH = 2,
-  parameter TCLK_PERIOD = 50
+  parameter FIFO_DEPTH = 2
 )
 (
   input logic i_clk,
@@ -58,7 +57,7 @@ assign apb_slave.pready  =  1'b1;
     rdata = 0;
     if(rd) begin
       case(addr)
-        CR_ADDR: rdata = CR;
+        CR_ADDR: rdata = {31'd0, CR.I2S_ENABLE};
         SR_ADDR: rdata = SR;
       endcase
     end
@@ -99,8 +98,8 @@ assign apb_slave.pready  =  1'b1;
 
 /*automatic switch-off transmitter if one of fifo buffer is empty */
 
-	assign i2s_tx_enable = (~(SR.fifol_empty | SR.fifor_empty)) ?
-                          CR.I2S_ENABLE : 1'b0;
+	assign i2s_tx_enable = SR.i2s_tx_done ?
+                          1'b0 : CR.I2S_ENABLE;
 
 /* SR.i2s_tx_done logic */
 	always_ff @ (posedge i_clk, negedge i_rst_n) begin
@@ -111,24 +110,7 @@ assign apb_slave.pready  =  1'b1;
 		else
 			SR.i2s_tx_done	<=	1'b0;
 	end
-	
-logic tclk_generated;
-logic ws_created;
-
-/*Module interconnection */
-tclk_oscillator #(
-  .TCLK_PERIOD(TCLK_PERIOD)
-) tclk_gen(
-  .tclk(tclk_generated)
-);
-
-ws_generator ws_gen(
-  .i_tclk(tclk_generated),
-  .i_nrst(i_rst_n),
-  .i_enable(CR.I2S_ENABLE),
-  .o_ws(ws_created)
-);
-  
+	  
 /* FIFO buffer for Left Channel */
 fifo_buffer #(
   .B(32),
@@ -166,8 +148,6 @@ i2s_tx i2s_tx_wrapper(
   .i_enable(i2s_tx_enable),
   .i_data_left(txl_out),
   .i_data_right(txr_out),
-  .i_tclk(tclk_generated),
-  .i_ws(ws_created),
   .data_rqst(buffer_read),
   .o_tclk(i2s_master.TCLK),
   .o_ws(i2s_master.WS),

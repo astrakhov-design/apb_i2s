@@ -1,0 +1,133 @@
+
+#
+# Mnemonic Maps
+#
+mmap new  -reuse -name {Boolean as Logic} -radix %b -contents {{%c=FALSE -edgepriority 1 -shape low}
+{%c=TRUE -edgepriority 1 -shape high}}
+mmap new  -reuse -name {Example Map} -radix %x -contents {{%b=11???? -bgcolor orange -label REG:%x -linecolor yellow -shape bus}
+{%x=1F -bgcolor red -label ERROR -linecolor white -shape EVENT}
+{%x=2C -bgcolor red -label ERROR -linecolor white -shape EVENT}
+{%x=* -label %x -linecolor gray -shape bus}}
+
+array unset createdGroup
+array set createdGroup {}
+#
+# Groups
+#
+if {[catch {group get -using [list APB_BUS]}]} {
+set createdGroup([list APB_BUS]) 1
+catch {group new -name APB_BUS -overlay 0}
+}
+if {[catch {group get -using [list I2S_BUS]}]} {
+set createdGroup([list I2S_BUS]) 1
+catch {group new -name I2S_BUS -overlay 0}
+}
+if {[catch {group get -using [list I2S_TX]}]} {
+set createdGroup([list I2S_TX]) 1
+catch {group new -name I2S_TX -overlay 0}
+}
+if {[catch {group get -using [list DUT]}]} {
+set createdGroup([list DUT]) 1
+catch {group new -name DUT -overlay 0}
+}
+if {[info exists createdGroup([list APB_BUS])]} {
+group using APB_BUS
+group set -overlay 0
+group set -comment {}
+group clear 0 end
+group insert \
+    [subst  {[format {tb_uvm.apb_slave.Slave.paddr[31:0]}]} ] \
+    [subst  {[format {tb_uvm.apb_slave.Slave.penable}]} ] \
+    [subst  {[format {tb_uvm.apb_slave.Slave.prdata[31:0]}]} ] \
+    [subst  {[format {tb_uvm.apb_slave.Slave.pready}]} ] \
+    [subst  {[format {tb_uvm.apb_slave.Slave.psel}]} ] \
+    [subst  {[format {tb_uvm.apb_slave.Slave.pslverr}]} ] \
+    [subst  {[format {tb_uvm.apb_slave.Slave.pwdata[31:0]}]} ] \
+    [subst  {[format {tb_uvm.apb_slave.Slave.pwrite}]} ]
+}
+
+if {[info exists createdGroup([list I2S_BUS])]} {
+group using I2S_BUS
+group set -overlay 0
+group set -comment {}
+group clear 0 end
+group insert \
+    [subst  {[format {tb_uvm.i2s_if.Master.TCLK}]} ] \
+    [subst  {[format {tb_uvm.i2s_if.Master.TD}]} ] \
+    [subst  {[format {tb_uvm.i2s_if.Master.WS}]} ]
+}
+
+if {[info exists createdGroup([list I2S_TX])]} {
+group using I2S_TX
+group set -overlay 0
+group set -comment {}
+group clear 0 end
+group insert \
+    [subst  {[format {tb_uvm.DUT.i2s_tx.bit_cntr[5:0]}]} ] \
+    [subst  {[format {tb_uvm.DUT.i2s_tx.clk}]} ] \
+    [subst  {[format {tb_uvm.DUT.i2s_tx.data_left[31:0]}]} ] \
+    [subst  {[format {tb_uvm.DUT.i2s_tx.data_right[31:0]}]} ] \
+    [subst  {[format {tb_uvm.DUT.i2s_tx.data_rqst}]} ] \
+    [subst  {[format {tb_uvm.DUT.i2s_tx.enable}]} ] \
+    [subst  {[format {tb_uvm.DUT.i2s_tx.nrst}]} ] \
+    [subst  {[format {tb_uvm.DUT.i2s_tx.shift_reg[63:0]}]} ] \
+    [subst  {[format {tb_uvm.DUT.i2s_tx.tclk}]} ] \
+    [subst  {[format {tb_uvm.DUT.i2s_tx.tclk_counter[2:0]}]} ] \
+    [subst  {[format {tb_uvm.DUT.i2s_tx.tclk_prefall}]} ] \
+    [subst  {[format {tb_uvm.DUT.i2s_tx.td}]} ] \
+    [subst  {[format {tb_uvm.DUT.i2s_tx.tx_done}]} ] \
+    [subst  {[format {tb_uvm.DUT.i2s_tx.ws}]} ] \
+    [subst  {[format {tb_uvm.DUT.i2s_tx.ws_reg}]} ]
+}
+
+if {[info exists createdGroup([list DUT])]} {
+group using DUT
+group set -overlay 0
+group set -comment {}
+group clear 0 end
+group insert \
+    [subst  {[format {tb_uvm.DUT.CR}]} ] \
+    [subst  {[format {tb_uvm.DUT.SR}]} ] \
+    [subst  {[format {tb_uvm.DUT.addr[1:0]}]} ] \
+    [subst  {[format {tb_uvm.DUT.buffer_read}]} ] \
+    [subst  {[format {tb_uvm.DUT.i2s_tx_done}]} ] \
+    [subst  {[format {tb_uvm.DUT.i2s_tx_enable}]} ] \
+    [subst  {[format {tb_uvm.DUT.i_clk}]} ] \
+    [subst  {[format {tb_uvm.DUT.i_rst_n}]} ] \
+    [subst  {[format {tb_uvm.DUT.rd}]} ] \
+    [subst  {[format {tb_uvm.DUT.rd_done}]} ] \
+    [subst  {[format {tb_uvm.DUT.rdata[31:0]}]} ] \
+    [subst  {[format {tb_uvm.DUT.txl_bus[31:0]}]} ] \
+    [subst  {[format {tb_uvm.DUT.txl_out[31:0]}]} ] \
+    [subst  {[format {tb_uvm.DUT.txl_write}]} ] \
+    [subst  {[format {tb_uvm.DUT.txr_bus[31:0]}]} ] \
+    [subst  {[format {tb_uvm.DUT.txr_out[31:0]}]} ] \
+    [subst  {[format {tb_uvm.DUT.txr_write}]} ] \
+    [subst  {[format {tb_uvm.DUT.wdata[31:0]}]} ] \
+    [subst  {[format {tb_uvm.DUT.wr}]} ]
+}
+
+
+set groupId0 [waveform add -groups I2S_BUS]
+waveform hierarchy collapse $groupId0
+
+
+set groupId0 [waveform add -groups APB_BUS]
+waveform hierarchy collapse $groupId0
+
+
+set groupId0 [waveform add -groups DUT]
+
+set id [waveform add -signals [subst  {
+	{[format {tb_uvm.DUT.fifo_txl.array_reg[3:0]}]}
+	} ]]
+waveform hierarchy expand $id
+set id [waveform add -signals [subst  {
+	{[format {tb_uvm.DUT.fifo_txr.array_reg[3:0]}]}
+	} ]]
+waveform hierarchy expand $id
+
+set groupId0 [waveform add -groups I2S_TX]
+
+
+waveform xview limits 0 2000ps

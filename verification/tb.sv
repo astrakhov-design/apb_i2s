@@ -25,12 +25,10 @@ module tb;
   i2s_interface i2s_slave();
   
   localparam  FIFO_DEPTH  = 2;
-  localparam  TCLK_PERIOD = 25;
 
 /* interconnection */
 apb_i2s #(
-  .FIFO_DEPTH(FIFO_DEPTH),
-  .TCLK_PERIOD(TCLK_PERIOD)
+  .FIFO_DEPTH(FIFO_DEPTH)
 )
 DUT(
   .i_clk(clk),
