@@ -11,11 +11,11 @@ class test_standalone extends uvm_test;
   `uvm_component_utils(test_standalone)
 
 //declare testbench components
-  i2s_env i2s_env_i;  //env : i2s_env
-  i2s_rcv i2s_rcv_i;  //sequence: i2s_rcv
-  apb_env apb_env_i;  //environment: APB
-  apb_wr  apb_wr_i;   //sequence: APB write
-  apb_rd  apb_rd_i;   //sequence: APB read
+  i2s_env       i2s_env_i;  //env : i2s_env
+  i2s_rcv       i2s_rcv_i;  //sequence: i2s_rcv
+  apb_env       apb_env_i;  //environment: APB
+  apb_wr        apb_wr_i;   //sequence: APB write
+  apb_rd        apb_rd_i;   //sequence: APB read
 
 //declare virtual interfaces
   virtual i2s_uvc_interface i2s_vif;
@@ -55,10 +55,10 @@ class test_standalone extends uvm_test;
 
 //run phase function
   virtual task run_phase (uvm_phase phase);
-    
+
     super.run_phase(phase);
     phase.raise_objection(this);
-        
+
     this.run_test_items();
 
     phase.drop_objection(this);
@@ -69,7 +69,7 @@ class test_standalone extends uvm_test;
 //user variables put HERE
   virtual task apb_write(
    input [31:0] addr,
-   input [31:0] data_); 
+   input [31:0] data_);
     begin
       apb_wr_i.wr_seq_rw_data = data_;
       apb_env_i.apb_scb_i.payload_exp_qu.push_back(data_);
@@ -77,14 +77,26 @@ class test_standalone extends uvm_test;
       apb_wr_i.start(apb_env_i.apb_agent_i.sequencer);
     end
   endtask
-  
+
   virtual task apb_read(
     input [31:0] addr,
     input [31:0] data_);
     begin
      apb_rd_i.rd_seq_addr = addr;
+     apb_env_i.apb_scb_i.comp_enable = 1;
      apb_env_i.apb_scb_i.payload_exp_qu.push_back(data_);
      apb_rd_i.start(apb_env_i.apb_agent_i.sequencer);
+    end
+  endtask
+
+  virtual task apb_read_data(
+    input   [31:0] addr,
+    output  [31:0] data_);
+    begin
+      apb_rd_i.rd_seq_addr = addr;
+      apb_env_i.apb_scb_i.comp_enable = 0;
+      apb_rd_i.start(apb_env_i.apb_agent_i.sequencer);
+      data_ = apb_rd_i.rd_seq_data;
     end
   endtask
 
@@ -94,7 +106,7 @@ class test_standalone extends uvm_test;
       repeat(ncycles) @ (posedge apb_env_i.apb_agent_i.monitor.apb_if.clk);
     end
   endtask
-  
+
   virtual task rcv_i2s(
     input [31:0]  data_left,
     input [31:0]  data_right
@@ -112,13 +124,15 @@ bit [31:0]  data_right_;
 bit [31:0]  DATA_LEFT [$];
 bit [31:0]  DATA_RIGHT [$];
 
+bit [31:0]  apb_data;
+
 struct packed {
   logic [26:0]  RESERVED;
   logic         i2s_tx_done;
   logic         fifor_empty;
   logic         fifor_full;
   logic         fifol_empty;
-  logic         fifol_full; 
+  logic         fifol_full;
 } SR_REG_test;
 
 endclass

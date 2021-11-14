@@ -21,9 +21,9 @@ class apb_driver extends uvm_driver #(apb_seq_item);
       apb_if.Master.pwrite  = 0;
       apb_if.Master.paddr   = 0;
       forever begin
-        seq_item_port.get_next_item(req);
+        seq_item_port.get(req);
         drive();
-        seq_item_port.item_done();
+        seq_item_port.put(req);
       end
     end
   endtask : run_phase
@@ -35,8 +35,10 @@ class apb_driver extends uvm_driver #(apb_seq_item);
       //Setup phase
       if(req.we)
         apb_if.Master.pwdata <= req.rw_data;
-      else
+      else begin
         apb_if.Master.pwdata <= 0;
+      end
+
       apb_if.Master.paddr    <= req.addr;
 
     apb_if.Master.psel       <= 1;
@@ -48,9 +50,16 @@ class apb_driver extends uvm_driver #(apb_seq_item);
     //Access phase
       @(posedge apb_if.clk);
       apb_if.Master.penable  <= 1;
+
+      @(negedge apb_if.clk);
+      if(!req.we)
+        req.rw_data <= apb_if.Master.prdata;
+
     //End of Message
       forever begin
         @(posedge apb_if.clk);
+        if(!req.we)
+          req.rw_data <= apb_if.Master.prdata;
         if(apb_if.pready)
           break;
       end

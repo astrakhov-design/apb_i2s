@@ -13,6 +13,8 @@ class apb_scb extends uvm_scoreboard;
   logic [31:0]  payload_exp_qu[$]; //test can put here data for comparison
   logic [31:0]  payload_msk_qu[$]; //payload mask
 
+  bit comp_enable;
+
   function void build_phase(uvm_phase phase);
     super.build_phase(phase);
     item_collected_export_apb = new("item_collected_export_apb", this);
@@ -20,7 +22,8 @@ class apb_scb extends uvm_scoreboard;
 
   //write task
   virtual function void write_apb(apb_seq_item pkt);
-    pkt_qu.push_back(pkt);
+    if(comp_enable)
+      pkt_qu.push_back(pkt);
   endfunction : write_apb
 
   //run_phase
@@ -29,6 +32,7 @@ class apb_scb extends uvm_scoreboard;
     logic [31:0]  payload_exp;
     logic [31:0]  payload_mask;
     forever begin
+//      if(comp_enable) begin
       wait(pkt_qu.size() > 0);
       if(pkt_qu.size() > 0) begin
         apb_pkt = pkt_qu.pop_front();

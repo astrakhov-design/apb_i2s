@@ -45,6 +45,8 @@ class apb_wr extends uvm_sequence#(apb_seq_item);
                       addr    ==  wr_seq_addr;
                       we      ==  1;
                       delay   ==  wr_delay;})
+    get_response(req);
+  `uvm_info(get_type_name(), $sformatf("Written Addr: 0x%h, Written Data: 0x%h", req.addr, req.rw_data), UVM_MEDIUM)
   endtask
 
 endclass
@@ -52,6 +54,7 @@ endclass
 class apb_rd extends uvm_sequence#(apb_seq_item);
 
   rand bit [`uvm_apb_asize-1:0] rd_seq_addr;
+  rand bit [`uvm_apb_dsize-1:0] rd_seq_data;
   integer                       rd_delay;
 
   `uvm_object_utils(apb_rd)
@@ -69,6 +72,10 @@ class apb_rd extends uvm_sequence#(apb_seq_item);
     `uvm_do_with(req,{addr  ==  rd_seq_addr;
                       we    ==  0;
                       delay ==  rd_delay;})
+    get_response(req);
+  rd_seq_data = req.rw_data;
+  `uvm_info(get_type_name(), $sformatf("EXIT ADDR: 0x%h, EXIT DATA: 0x%h", req.addr, req.rw_data), UVM_MEDIUM)
+
   endtask
 
 endclass : apb_rd

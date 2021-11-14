@@ -13,6 +13,8 @@ module apb_i2s #(
   i2s_interface.Master i2s_master
 );
 
+localparam  FIFO_DATA_WIDTH = 32;
+
 /* REGISTER MAP */
 import register_pkg::*;
 
@@ -28,29 +30,28 @@ logic         rd_done;
 logic         wr;
 logic [31:0]  wdata;
 logic [31:0]  rdata;
-logic i2s_tx_enable;
-logic	i2s_tx_done;
+logic         i2s_tx_enable;
 
-assign wr               = apb_slave.psel    &
-                          apb_slave.penable &
-                          apb_slave.pwrite;
+assign wr                 = apb_slave.psel    &
+                            apb_slave.penable &
+                            apb_slave.pwrite;
 
-assign rd               = apb_slave.psel    &
-                          apb_slave.penable &
-                          ~apb_slave.pwrite;
+assign rd                 = apb_slave.psel    &
+                            apb_slave.penable &
+                            ~apb_slave.pwrite;
 
-assign rd_done          = apb_slave.psel    &
-                          apb_slave.penable &
-                          ~apb_slave.pwrite &
-                          apb_slave.pready;
+assign rd_done            = apb_slave.psel    &
+                            apb_slave.penable &
+                            ~apb_slave.pwrite &
+                            apb_slave.pready;
 
-assign addr             = address_map'(apb_slave.paddr[5:2]);
+assign addr               = address_map'(apb_slave.paddr[5:2]);
 
-assign wdata            = apb_slave.pwdata;
-assign apb_slave.prdata = rdata;
+assign wdata              = apb_slave.pwdata;
+assign apb_slave.prdata   = rdata;
 
-assign apb_slave.pslverr =  1'b0;
-assign apb_slave.pready  =  1'b1;
+assign apb_slave.pslverr  =  1'b0;
+assign apb_slave.pready   =  1'b1;
 
 /* read registers by SW */
   always_comb begin
@@ -105,7 +106,7 @@ assign apb_slave.pready  =  1'b1;
 	always_ff @ (posedge i_clk, negedge i_rst_n) begin
 		if(!i_rst_n)
 			SR.i2s_tx_done	<=	1'b0;
-		else if (SR.fifor_empty && SR.fifol_empty)
+		else if (SR.fifor_empty || SR.fifol_empty)
 			SR.i2s_tx_done	<=	1'b1;
 		else
 			SR.i2s_tx_done	<=	1'b0;
@@ -113,7 +114,7 @@ assign apb_slave.pready  =  1'b1;
 	  
 /* FIFO buffer for Left Channel */
 fifo_buffer #(
-  .B(32),
+  .B(FIFO_DATA_WIDTH),
   .W(FIFO_DEPTH)
 ) fifo_txl(
   .clk(i_clk),
@@ -128,7 +129,7 @@ fifo_buffer #(
 
 /* FIFO buffer for Right Channel */
 fifo_buffer #(
-  .B(32),
+  .B(FIFO_DATA_WIDTH),
   .W(FIFO_DEPTH)
 ) fifo_txr(
   .clk(i_clk),
