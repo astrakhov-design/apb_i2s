@@ -6,10 +6,10 @@ package register_pkg;
 
 //address map
   typedef enum logic [1:0] {
-    CR_ADDR,
-    SR_ADDR,
-    TXR_ADDR,
-    TXL_ADDR
+    CR_ADDR = 2'b00,
+    SR_ADDR = 2'b01,
+    TXR_ADDR = 2'b10,
+    TXL_ADDR = 2'b11
   } address_map;
 
 //COMMAND REGISTER
